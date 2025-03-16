@@ -1,0 +1,112 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "CloudFormation template to create SSM Automation Document for CloudWatch Agent deployment"
+
+Resources:
+  CloudWatchAgentDeploymentDocument:
+    Type: "AWS::SSM::Document"
+    Properties:
+      DocumentType: "Automation"
+      Name: "DeployCloudWatchAgentForDiskMonitoring"
+      Content:
+        description: "Deploy CloudWatch Agent to Monitor Disk Usage"
+        schemaVersion: "0.3"
+        parameters:
+          InstanceIds:
+            type: StringList
+            description: "EC2 Instance IDs where the agent will be deployed"
+          AgentConfigParameter:
+            type: String
+            description: "SSM Parameter Store name for CloudWatch Agent config"
+            default: "/disk-monitoring/agent-config"
+          TargetAccountId:
+            type: String
+            description: "Account ID where deployment is happening"
+        mainSteps:
+          - name: "InstallCloudWatchAgent"
+            action: "aws:runCommand"
+            inputs:
+              DocumentName: "AWS-ConfigureAWSPackage"
+              InstanceIds: "{{ InstanceIds }}"
+              Parameters:
+                action: "Install"
+                name: "AmazonCloudWatchAgent"
+              CloudWatchOutputConfig:
+                CloudWatchLogGroupName: "/ssm/disk-monitoring/deployment"
+                CloudWatchOutputEnabled: true
+
+          - name: "UploadAgentConfiguration"
+            action: "aws:executeAwsApi"
+            inputs:
+              Service: "ssm"
+              Api: "PutParameter"
+              Name: "{{ AgentConfigParameter }}"
+              Type: "String"
+              Value: |
+                {
+                  "agent": {
+                    "metrics_collection_interval": 60,
+                    "run_as_user": "cwagent"
+                  },
+                  "metrics": {
+                    "namespace": "DiskMonitoring",
+                    "metrics_collected": {
+                      "disk": {
+                        "resources": [
+                          "/",
+                          "/var/log",
+                          "/var/lib",
+                          "/tmp"
+                        ],
+                        "measurement": [
+                          "used_percent",
+                          "inodes_used_percent",
+                          "used",
+                          "total",
+                          "available"
+                        ],
+                        "ignore_file_system_types": [
+                          "sysfs", "devtmpfs"
+                        ],
+                        "metrics_collection_interval": 60
+                      }
+                    },
+                    "append_dimensions": {
+                      "InstanceId": "${aws:InstanceId}",
+                      "InstanceType": "${aws:InstanceType}",
+                      "AccountId": "{{ TargetAccountId }}"
+                    }
+                  }
+                }
+              Overwrite: true
+
+          - name: "ConfigureAndStartAgent"
+            action: "aws:runCommand"
+            inputs:
+              DocumentName: "AmazonCloudWatch-ManageAgent"
+              InstanceIds: "{{ InstanceIds }}"
+              Parameters:
+                action: "configure"
+                optionalConfigurationSource: "ssm"
+                optionalConfigurationLocation: "{{ AgentConfigParameter }}"
+                optionalRestart: "yes"
+              CloudWatchOutputConfig:
+                CloudWatchLogGroupName: "/ssm/disk-monitoring/configuration"
+                CloudWatchOutputEnabled: true
+
+          - name: "VerifyAgentStatus"
+            action: "aws:runCommand"
+            inputs:
+              DocumentName: "AWS-RunShellScript"
+              InstanceIds: "{{ InstanceIds }}"
+              Parameters:
+                commands: |
+                  systemctl status amazon-cloudwatch-agent
+                  amazon-cloudwatch-agent-ctl -m ec2 -a status
+              CloudWatchOutputConfig:
+                CloudWatchLogGroupName: "/ssm/disk-monitoring/verification"
+                CloudWatchOutputEnabled: true
+
+Outputs:
+  DocumentName:
+    Description: "Name of the created SSM document"
+    Value: !Ref CloudWatchAgentDeploymentDocument

@@ -1,0 +1,55 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: IAM Role for Cross-Account CloudWatch Metrics Access
+
+Parameters:
+  MonitoringAccountId:
+    Type: String
+    Description: AWS Account ID of the monitoring account
+    AllowedPattern: ^[0-9]{12}$
+
+Resources:
+  CrossAccountMetricsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: CrossAccountCWMetricsRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub arn:aws:iam::${MonitoringAccountId}:root
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                aws:PrincipalOrgID: ${OrganizationId}
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/CloudWatchReadOnlyAccess
+      Description: Role for cross-account CloudWatch metrics access
+      Tags:
+        - Key: Purpose
+          Value: CrossAccountMonitoring
+
+  # CloudWatch Agent service role for the EC2 instances
+  CloudWatchAgentServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: CloudWatchAgentServiceRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Description: Role for CloudWatch Agent to publish metrics
+      Tags:
+        - Key: Purpose
+          Value: DiskMonitoring
+
+Outputs:
+  CrossAccountRoleARN:
+    Description: ARN of the cross-account CloudWatch metrics role
+    Value: !GetAtt CrossAccountMetricsRole.Arn

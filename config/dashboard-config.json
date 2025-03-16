@@ -1,0 +1,220 @@
+{
+  "widgets": [
+    {
+      "type": "text",
+      "x": 0,
+      "y": 0,
+      "width": 24,
+      "height": 1,
+      "properties": {
+        "markdown": "# Cross-Account Disk Utilization Dashboard\nShows disk usage across all accounts and instances. Last updated: ${Time:NOW()}"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 1,
+      "width": 24,
+      "height": 6,
+      "properties": {
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          [
+            {
+              "expression": "SEARCH('Namespace=\"DiskMonitoring\" MetricName=\"disk_used_percent\" Path=\"/\"', 'Average', 300)",
+              "id": "e1",
+              "label": "Disk Usage - Root Partition"
+            }
+          ]
+        ],
+        "region": "us-east-1",
+        "title": "Root Partition Usage Across All Instances",
+        "period": 300,
+        "stat": "Average",
+        "yAxis": {
+          "left": {
+            "min": 0,
+            "max": 100
+          }
+        },
+        "annotations": {
+          "horizontal": [
+            {
+              "label": "Critical (95%)",
+              "value": 95,
+              "color": "#d13212"
+            },
+            {
+              "label": "Warning (85%)",
+              "value": 85,
+              "color": "#ff7f0e"
+            },
+            {
+              "label": "Attention (70%)",
+              "value": 70,
+              "color": "#2ca02c"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 7,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "view": "gauge",
+        "metrics": [
+          [
+            {
+              "expression": "SEARCH('Namespace=\"DiskMonitoring\" MetricName=\"disk_used_percent\" AccountId=\"111122223333\" Path=\"/\"', 'Maximum', 300)",
+              "id": "e2",
+              "label": "Account 1 (Prod)"
+            }
+          ]
+        ],
+        "region": "us-east-1",
+        "title": "Production Account - Max Disk Usage",
+        "period": 300,
+        "yAxis": {
+          "left": {
+            "min": 0,
+            "max": 100
+          }
+        },
+        "gauge": {
+          "yAxis": {
+            "min": 0,
+            "max": 100
+          },
+          "thresholds": [
+            {
+              "value": 70,
+              "color": "#2ca02c"
+            },
+            {
+              "value": 85,
+              "color": "#ff7f0e"
+            },
+            {
+              "value": 95,
+              "color": "#d13212"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 8,
+      "y": 7,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "view": "gauge",
+        "metrics": [
+          [
+            {
+              "expression": "SEARCH('Namespace=\"DiskMonitoring\" MetricName=\"disk_used_percent\" AccountId=\"444455556666\" Path=\"/\"', 'Maximum', 300)",
+              "id": "e3",
+              "label": "Account 2 (Staging)"
+            }
+          ]
+        ],
+        "region": "us-east-1",
+        "title": "Staging Account - Max Disk Usage",
+        "period": 300,
+        "yAxis": {
+          "left": {
+            "min": 0,
+            "max": 100
+          }
+        },
+        "gauge": {
+          "yAxis": {
+            "min": 0,
+            "max": 100
+          },
+          "thresholds": [
+            {
+              "value": 70,
+              "color": "#2ca02c"
+            },
+            {
+              "value": 85,
+              "color": "#ff7f0e"
+            },
+            {
+              "value": 95,
+              "color": "#d13212"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 16,
+      "y": 7,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "view": "gauge",
+        "metrics": [
+          [
+            {
+              "expression": "SEARCH('Namespace=\"DiskMonitoring\" MetricName=\"disk_used_percent\" AccountId=\"777788889999\" Path=\"/\"', 'Maximum', 300)",
+              "id": "e4",
+              "label": "Account 3 (Dev)"
+            }
+          ]
+        ],
+        "region": "us-east-1",
+        "title": "Development Account - Max Disk Usage",
+        "period": 300,
+        "yAxis": {
+          "left": {
+            "min": 0,
+            "max": 100
+          }
+        },
+        "gauge": {
+          "yAxis": {
+            "min": 0,
+            "max": 100
+          },
+          "thresholds": [
+            {
+              "value": 70,
+              "color": "#2ca02c"
+            },
+            {
+              "value": 85,
+              "color": "#ff7f0e"
+            },
+            {
+              "value": 95,
+              "color": "#d13212"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "log",
+      "x": 0,
+      "y": 13,
+      "width": 24,
+      "height": 6,
+      "properties": {
+        "query": "SOURCE '/aws/events/disk_monitoring' | fields @timestamp, @message, account_id, instance_id, alarm_name, current_value, threshold_value, remediation_action\n| sort @timestamp desc\n| limit 20",
+        "region": "us-east-1",
+        "title": "Recent Disk Alarms and Remediation Actions",
+        "view": "table"
+      }
+    }
+  ]
+}
