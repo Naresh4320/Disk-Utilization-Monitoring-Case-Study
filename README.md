@@ -25,9 +25,9 @@ This solution provides a comprehensive approach to monitoring disk utilization a
 
 **4.    Alerting & Remediation**
 
-*   CloudWatch Alarms: Multi-threshold alerts (70%, 85%, 95%)
-*   EventBridge: Routes alerts to appropriate destinations
-*   SNS: Sends notifications to operations teams
+*   CloudWatch Alarms: Multi-threshold alerts with limits (70%, 85%, 95%)
+*   EventBridge: Routes alerts to appropriate groups
+*   SNS: Sends notifications to operations channels
 *   Lambda Functions: Executes remediation scripts
 *   Systems Manager Automation: Runs standardized remediation workflows
 
@@ -92,9 +92,6 @@ Use standard resolution metrics (60-second intervals) for most cases
 Implement lifecycle policies on S3 to manage log storage costs
 Configure CloudWatch Logs retention periods appropriate to requirements
 Use alarms and automated remediation to reduce operational costs
-
-### Repository Structure
-![alt text](image.png)
 
 ###     Conclusion
 This solution provides the CTO with a comprehensive system for monitoring disk utilization across all EC2 instances in the enterprise's three AWS accounts. By leveraging AWS native services and following best practices for security and cost optimization, the solution delivers:
